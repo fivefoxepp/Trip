@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Day Trip with Friends</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* (ส่วน CSS ยังคงเหมือนเดิมเป๊ะครับ ผมขอใส่มาให้ครบไฟล์จะได้ก๊อปง่ายๆ) */
+        body { font-family: 'Prompt', sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #ff6b81; margin-bottom: 5px; }
+        p.subtitle { text-align: center; color: #747d8c; margin-bottom: 30px; }
+        .form-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #f1f2f6; padding: 20px; border-radius: 15px; margin-bottom: 30px; }
+        .form-full { grid-column: span 2; }
+        input { padding: 12px; border: 1px solid #dfe4ea; border-radius: 8px; font-family: 'Prompt', sans-serif; outline: none; width: 100%; box-sizing: border-box; }
+        input:focus { border-color: #ff6b81; }
+        button.add-btn { grid-column: span 2; padding: 15px; background-color: #ff6b81; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Prompt', sans-serif; font-size: 1.1em; font-weight: 600; transition: 0.3s; }
+        button.add-btn:hover { background-color: #ff4757; }
+        .timeline { list-style: none; padding: 0; margin: 0; }
+        .timeline-item { display: flex; background: #ffffff; margin-bottom: 20px; padding: 20px; border-radius: 12px; border-left: 6px solid #1e90ff; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; position: relative; }
+        .timeline-item:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+        .time { font-size: 1.3em; font-weight: 600; color: #1e90ff; min-width: 90px; }
+        .details { flex-grow: 1; padding-left: 15px; padding-right: 40px; }
+        .place { font-size: 1.2em; font-weight: 600; color: #2f3542; }
+        .activity { font-size: 1em; color: #747d8c; margin-top: 5px; margin-bottom: 10px; }
+        .map-btn { display: inline-block; background-color: #2ed573; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85em; margin-bottom: 15px; transition: 0.3s; }
+        .map-btn:hover { background-color: #26ae60; }
+        .place-image { max-width: 100%; height: 200px; object-fit: cover; border-radius: 10px; display: block; margin-top: 10px; }
+        .delete-btn { position: absolute; top: 20px; right: 20px; background-color: #f1f2f6; color: #ff4757; padding: 8px 12px; border: none; border-radius: 6px; font-size: 0.85em; cursor: pointer; font-family: 'Prompt', sans-serif; }
+        .delete-btn:hover { background-color: #ffeaa7; color: #d63031; }
+        @media (max-width: 600px) {
+            .form-group { grid-template-columns: 1fr; }
+            .form-full, button.add-btn { grid-column: span 1; }
+            .timeline-item { flex-direction: column; }
+            .time { margin-bottom: 10px; }
+            .details { padding-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>แพลนทริป 1Day </h1>
+        <p class="subtitle">ระบบจะบันทึกข้อมูลอัตโนมัติ Auto-Save</p>
+
+        <div class="form-group">
+            <input type="time" id="timeInput" required>
+            <input type="text" id="placeInput" placeholder="ชื่อสถานที่" required>
+            <input type="text" id="activityInput" class="form-full" placeholder="กิจกรรม (เช่น ถ่ายรูป, กินข้าว)">
+            <input type="url" id="mapInput" placeholder="ลิงก์ Google Maps (ถ้ามี)">
+            <input type="url" id="imageInput" placeholder="ลิงก์รูปภาพ (URL ที่ลงท้ายด้วย .jpg, .png)">
+            <button class="add-btn" onclick="addTrip()">+ เพิ่มลงตาราง</button>
+        </div>
+
+        <ul class="timeline" id="tripList">
+            </ul>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="clearAllTrips()" style="background: #dfe4ea; color: #747d8c; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-family: 'Prompt', sans-serif;">ล้างข้อมูลทริปทั้งหมด</button>
+        </div>
+    </div>
+
+    <script>
+        // เมื่อเปิดหน้าเว็บขึ้นมา ให้โหลดข้อมูลที่เคยบันทึกไว้มาแสดงทันที
+        window.onload = function() {
+            loadTrips();
+        };
+
+        function addTrip() {
+            const time = document.getElementById('timeInput').value;
+            const place = document.getElementById('placeInput').value;
+            const activity = document.getElementById('activityInput').value || '-';
+            const mapLink = document.getElementById('mapInput').value;
+            const imageLink = document.getElementById('imageInput').value;
+
+            if(!time || !place) {
+                alert("กรุณาใส่เวลาและชื่อสถานที่ให้ครบนะครับ!");
+                return;
+            }
+
+            const list = document.getElementById('tripList');
+            const li = document.createElement('li');
+            li.className = 'timeline-item';
+            
+            const colors = ['#1e90ff', '#ff6b81', '#2ed573', '#ffa502', '#9b59b6'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            li.style.borderLeftColor = randomColor;
+
+            let mapHTML = mapLink ? `<a href="${mapLink}" target="_blank" class="map-btn">📍 นำทางไปที่นี่</a>` : '';
+            let imageHTML = imageLink ? `<img src="${imageLink}" alt="รูปสถานที่" class="place-image" onerror="this.style.display='none';">` : '';
+
+            // เปลี่ยนปุ่มลบให้ไปเรียกฟังก์ชัน removeTrip() แทน
+            li.innerHTML = `
+                <div class="time" style="color: ${randomColor}">${time}</div>
+                <div class="details">
+                    <div class="place">📍 ${place}</div>
+                    <div class="activity">${activity}</div>
+                    ${mapHTML}
+                    ${imageHTML}
+                </div>
+                <button class="delete-btn" onclick="removeTrip(this)">ลบ</button>
+            `;
+
+            list.appendChild(li);
+
+            // เคลียร์ช่องกรอกข้อมูล
+            document.getElementById('timeInput').value = '';
+            document.getElementById('placeInput').value = '';
+            document.getElementById('activityInput').value = '';
+            document.getElementById('mapInput').value = '';
+            document.getElementById('imageInput').value = '';
+
+            // **สำคัญมาก: สั่งบันทึกข้อมูลทันทีที่เพิ่มเสร็จ**
+            saveTrips();
+        }
+
+        // ฟังก์ชันลบรายการ และบันทึกข้อมูลใหม่
+        function removeTrip(button) {
+            button.parentElement.remove();
+            saveTrips(); // อัปเดตข้อมูลที่บันทึกไว้
+        }
+
+        // ฟังก์ชันบันทึกข้อมูลลงในเบราว์เซอร์
+        function saveTrips() {
+            const listHTML = document.getElementById('tripList').innerHTML;
+            localStorage.setItem('myTripData', listHTML);
+        }
+
+        // ฟังก์ชันดึงข้อมูลเก่ามาแสดง
+        function loadTrips() {
+            const savedData = localStorage.getItem('myTripData');
+            if(savedData) {
+                document.getElementById('tripList').innerHTML = savedData;
+            } else {
+                // ถ้ายังไม่มีข้อมูลเลย ให้แสดงตัวอย่างตั้งต้น
+                document.getElementById('tripList').innerHTML = `
+                    <li class="timeline-item" style="border-left-color: #1e90ff;">
+                        <div class="time" style="color: #1e90ff;">09:00</div>
+                        <div class="details">
+                            <div class="place">จุดนัดพบ</div>
+                            <div class="activity">รวมแก๊ง เตรียมตัวออกเดินทาง</div>
+                        </div>
+                        <button class="delete-btn" onclick="removeTrip(this)">ลบ</button>
+                    </li>
+                `;
+            }
+        }
+
+        // ฟังก์ชันล้างข้อมูลทั้งหมด (เผื่ออยากเริ่มจัดทริปใหม่)
+        function clearAllTrips() {
+            if(confirm("แน่ใจนะว่าจะล้างตารางทริปทั้งหมด?")) {
+                localStorage.removeItem('myTripData');
+                document.getElementById('tripList').innerHTML = '';
+            }
+        }
+    </script>
+
+</body>
+</html>
