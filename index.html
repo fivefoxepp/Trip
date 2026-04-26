@@ -6,7 +6,7 @@
     <title>One Day Trip with Friends</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        /* (ส่วน CSS ยังคงเหมือนเดิมเป๊ะครับ ผมขอใส่มาให้ครบไฟล์จะได้ก๊อปง่ายๆ) */
+        /* CSS ส่วนนี้เหมือนเดิมครับ */
         body { font-family: 'Prompt', sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #ff6b81; margin-bottom: 5px; }
@@ -41,8 +41,8 @@
 <body>
 
     <div class="container">
-        <h1>แพลนทริป 1Day </h1>
-        <p class="subtitle">ระบบจะบันทึกข้อมูลอัตโนมัติ Auto-Save</p>
+        <h1>แพลนทริป 1 DAY </h1>
+        <p class="subtitle">อัตโนมัติ</p>
 
         <div class="form-group">
             <input type="time" id="timeInput" required>
@@ -57,12 +57,14 @@
             </ul>
         
         <div style="text-align: center; margin-top: 20px;">
-            <button onclick="clearAllTrips()" style="background: #dfe4ea; color: #747d8c; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-family: 'Prompt', sans-serif;">ล้างข้อมูลทริปทั้งหมด</button>
+            <button onclick="clearAllTrips()" style="background: #dfe4ea; color: #747d8c; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-family: 'Prompt', sans-serif;">🗑️ ล้างข้อมูลทริปทั้งหมด</button>
         </div>
     </div>
 
     <script>
-        // เมื่อเปิดหน้าเว็บขึ้นมา ให้โหลดข้อมูลที่เคยบันทึกไว้มาแสดงทันที
+      
+        let trips = [];
+
         window.onload = function() {
             loadTrips();
         };
@@ -79,79 +81,89 @@
                 return;
             }
 
-            const list = document.getElementById('tripList');
-            const li = document.createElement('li');
-            li.className = 'timeline-item';
-            
             const colors = ['#1e90ff', '#ff6b81', '#2ed573', '#ffa502', '#9b59b6'];
             const randomColor = colors[Math.floor(Math.random() * colors.length)];
-            li.style.borderLeftColor = randomColor;
 
-            let mapHTML = mapLink ? `<a href="${mapLink}" target="_blank" class="map-btn">📍 นำทางไปที่นี่</a>` : '';
-            let imageHTML = imageLink ? `<img src="${imageLink}" alt="รูปสถานที่" class="place-image" onerror="this.style.display='none';">` : '';
+           
+            const newTrip = {
+                id: Date.now(), 
+                time: time,
+                place: place,
+                activity: activity,
+                mapLink: mapLink,
+                imageLink: imageLink,
+                color: randomColor
+            };
+            trips.push(newTrip);
+            trips.sort((a, b) => a.time.localeCompare(b.time));
+            renderTrips();
+            saveTrips();
 
-            // เปลี่ยนปุ่มลบให้ไปเรียกฟังก์ชัน removeTrip() แทน
-            li.innerHTML = `
-                <div class="time" style="color: ${randomColor}">${time}</div>
-                <div class="details">
-                    <div class="place">📍 ${place}</div>
-                    <div class="activity">${activity}</div>
-                    ${mapHTML}
-                    ${imageHTML}
-                </div>
-                <button class="delete-btn" onclick="removeTrip(this)">ลบ</button>
-            `;
-
-            list.appendChild(li);
-
-            // เคลียร์ช่องกรอกข้อมูล
             document.getElementById('timeInput').value = '';
             document.getElementById('placeInput').value = '';
             document.getElementById('activityInput').value = '';
             document.getElementById('mapInput').value = '';
             document.getElementById('imageInput').value = '';
-
-            // **สำคัญมาก: สั่งบันทึกข้อมูลทันทีที่เพิ่มเสร็จ**
-            saveTrips();
         }
 
-        // ฟังก์ชันลบรายการ และบันทึกข้อมูลใหม่
-        function removeTrip(button) {
-            button.parentElement.remove();
-            saveTrips(); // อัปเดตข้อมูลที่บันทึกไว้
-        }
+        function renderTrips() {
+            const list = document.getElementById('tripList');
+            list.innerHTML = '';
 
-        // ฟังก์ชันบันทึกข้อมูลลงในเบราว์เซอร์
-        function saveTrips() {
-            const listHTML = document.getElementById('tripList').innerHTML;
-            localStorage.setItem('myTripData', listHTML);
-        }
+            trips.forEach(trip => {
+                const li = document.createElement('li');
+                li.className = 'timeline-item';
+                li.style.borderLeftColor = trip.color;
 
-        // ฟังก์ชันดึงข้อมูลเก่ามาแสดง
-        function loadTrips() {
-            const savedData = localStorage.getItem('myTripData');
-            if(savedData) {
-                document.getElementById('tripList').innerHTML = savedData;
-            } else {
-                // ถ้ายังไม่มีข้อมูลเลย ให้แสดงตัวอย่างตั้งต้น
-                document.getElementById('tripList').innerHTML = `
-                    <li class="timeline-item" style="border-left-color: #1e90ff;">
-                        <div class="time" style="color: #1e90ff;">09:00</div>
-                        <div class="details">
-                            <div class="place">จุดนัดพบ</div>
-                            <div class="activity">รวมแก๊ง เตรียมตัวออกเดินทาง</div>
-                        </div>
-                        <button class="delete-btn" onclick="removeTrip(this)">ลบ</button>
-                    </li>
+                let mapHTML = trip.mapLink ? `<a href="${trip.mapLink}" target="_blank" class="map-btn">📍 นำทางไปที่นี่</a>` : '';
+                let imageHTML = trip.imageLink ? `<img src="${trip.imageLink}" alt="รูปสถานที่" class="place-image" onerror="this.style.display='none';">` : '';
+
+                li.innerHTML = `
+                    <div class="time" style="color: ${trip.color}">${trip.time}</div>
+                    <div class="details">
+                        <div class="place">📍 ${trip.place}</div>
+                        <div class="activity">${trip.activity}</div>
+                        ${mapHTML}
+                        ${imageHTML}
+                    </div>
+                    <button class="delete-btn" onclick="removeTrip(${trip.id})">ลบ</button>
                 `;
+                list.appendChild(li);
+            });
+        }
+        function removeTrip(id) {
+            trips = trips.filter(trip => trip.id !== id);
+            renderTrips();
+            saveTrips(); 
+        }
+        function saveTrips() {
+            localStorage.setItem('myTripDataJSON', JSON.stringify(trips));
+        }
+        function loadTrips() {
+            const savedData = localStorage.getItem('myTripDataJSON');
+            if(savedData) {
+                trips = JSON.parse(savedData);
+            } else {
+                trips = [
+                    {
+                        id: Date.now(),
+                        time: '09:00',
+                        place: 'จุดนัดพบ',
+                        activity: 'รวมแก๊ง เตรียมตัวออกเดินทาง!',
+                        mapLink: '',
+                        imageLink: '',
+                        color: '#1e90ff'
+                    }
+                ];
             }
+            renderTrips();
         }
 
-        // ฟังก์ชันล้างข้อมูลทั้งหมด (เผื่ออยากเริ่มจัดทริปใหม่)
         function clearAllTrips() {
             if(confirm("แน่ใจนะว่าจะล้างตารางทริปทั้งหมด?")) {
-                localStorage.removeItem('myTripData');
-                document.getElementById('tripList').innerHTML = '';
+                trips = [];
+                renderTrips();
+                saveTrips();
             }
         }
     </script>
