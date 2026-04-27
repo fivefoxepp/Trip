@@ -60,7 +60,7 @@
     </div>
 
     <script>
-      
+        // นี่คือ Config ของคุณที่ผมจัดเรียงให้ใหม่ครับ
         const firebaseConfig = {
             apiKey: "AIzaSyBdAsRst1lZiX06UFWjEFON2be2yiV_51c",
             authDomain: "tripplanner-50bd4.firebaseapp.com",
@@ -69,10 +69,12 @@
             messagingSenderId: "166007708886",
             appId: "1:166007708886:web:44026135006d67cbc77d77",
             measurementId: "G-55KLJMJ96F",
-
+            
+            // 🚨 แก้ไขบรรทัดนี้: ลบข้อความแล้วใส่ลิงก์ของคุณแทน 🚨
             databaseURL: "ใส่_ลิงก์_DATABASE_URL_ของคุณตรงนี้"
         };
 
+        // เปิดใช้งาน Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database().ref('trips'); 
 
