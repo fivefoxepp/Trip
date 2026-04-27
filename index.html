@@ -36,37 +36,45 @@
             .details { padding-left: 0; }
         }
     </style>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
 
     <div class="container">
-        <h1>แพลนทริป 1 DAY </h1>
-        <p class="subtitle">อัตโนมัติ</p>
+        <h1>🚗 แพลนทริปออนไลน์ (Real-time) 🌍</h1>
+        <p class="subtitle">พิมพ์ปุ๊บ เด้งโชว์หน้าจอเพื่อนปั๊บ!</p>
 
         <div class="form-group">
             <input type="time" id="timeInput" required>
-            <input type="text" id="placeInput" placeholder="ชื่อสถานที่" required>
-            <input type="text" id="activityInput" class="form-full" placeholder="กิจกรรม (เช่น ถ่ายรูป, กินข้าว)">
-            <input type="url" id="mapInput" placeholder="ลิงก์ Google Maps (ถ้ามี)">
-            <input type="url" id="imageInput" placeholder="ลิงก์รูปภาพ (URL ที่ลงท้ายด้วย .jpg, .png)">
+            <input type="text" id="placeInput" placeholder="📍 ชื่อสถานที่" required>
+            <input type="text" id="activityInput" class="form-full" placeholder="📝 กิจกรรม (เช่น ถ่ายรูป, กินข้าว)">
+            <input type="url" id="mapInput" placeholder="🌍 ลิงก์ Google Maps (ถ้ามี)">
+            <input type="url" id="imageInput" placeholder="🖼️ ลิงก์รูปภาพ (URL ที่ลงท้ายด้วย .jpg, .png)">
             <button class="add-btn" onclick="addTrip()">+ เพิ่มลงตาราง</button>
         </div>
 
         <ul class="timeline" id="tripList">
             </ul>
-        
-        <div style="text-align: center; margin-top: 20px;">
-            <button onclick="clearAllTrips()" style="background: #dfe4ea; color: #747d8c; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-family: 'Prompt', sans-serif;">🗑️ ล้างข้อมูลทริปทั้งหมด</button>
-        </div>
     </div>
 
     <script>
       
-        let trips = [];
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdAsRst1lZiX06UFWjEFON2be2yiV_51c",
+            authDomain: "tripplanner-50bd4.firebaseapp.com",
+            projectId: "tripplanner-50bd4",
+            storageBucket: "tripplanner-50bd4.firebasestorage.app",
+            messagingSenderId: "166007708886",
+            appId: "1:166007708886:web:44026135006d67cbc77d77",
+            measurementId: "G-55KLJMJ96F",
 
-        window.onload = function() {
-            loadTrips();
+            databaseURL: "ใส่_ลิงก์_DATABASE_URL_ของคุณตรงนี้"
         };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database().ref('trips'); 
 
         function addTrip() {
             const time = document.getElementById('timeInput').value;
@@ -83,20 +91,14 @@
             const colors = ['#1e90ff', '#ff6b81', '#2ed573', '#ffa502', '#9b59b6'];
             const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-           
-            const newTrip = {
-                id: Date.now(), 
+            db.push({
                 time: time,
                 place: place,
                 activity: activity,
                 mapLink: mapLink,
                 imageLink: imageLink,
                 color: randomColor
-            };
-            trips.push(newTrip);
-            trips.sort((a, b) => a.time.localeCompare(b.time));
-            renderTrips();
-            saveTrips();
+            });
 
             document.getElementById('timeInput').value = '';
             document.getElementById('placeInput').value = '';
@@ -105,65 +107,44 @@
             document.getElementById('imageInput').value = '';
         }
 
-        function renderTrips() {
+        db.on('value', (snapshot) => {
             const list = document.getElementById('tripList');
-            list.innerHTML = '';
+            list.innerHTML = ''; 
 
-            trips.forEach(trip => {
-                const li = document.createElement('li');
-                li.className = 'timeline-item';
-                li.style.borderLeftColor = trip.color;
+            const data = snapshot.val();
+            if (data) {
+                const tripsArray = Object.keys(data).map(key => ({
+                    id: key, 
+                    ...data[key]
+                }));
+                
+                tripsArray.sort((a, b) => a.time.localeCompare(b.time));
 
-                let mapHTML = trip.mapLink ? `<a href="${trip.mapLink}" target="_blank" class="map-btn">📍 นำทางไปที่นี่</a>` : '';
-                let imageHTML = trip.imageLink ? `<img src="${trip.imageLink}" alt="รูปสถานที่" class="place-image" onerror="this.style.display='none';">` : '';
+                tripsArray.forEach(trip => {
+                    const li = document.createElement('li');
+                    li.className = 'timeline-item';
+                    li.style.borderLeftColor = trip.color;
 
-                li.innerHTML = `
-                    <div class="time" style="color: ${trip.color}">${trip.time}</div>
-                    <div class="details">
-                        <div class="place">📍 ${trip.place}</div>
-                        <div class="activity">${trip.activity}</div>
-                        ${mapHTML}
-                        ${imageHTML}
-                    </div>
-                    <button class="delete-btn" onclick="removeTrip(${trip.id})">ลบ</button>
-                `;
-                list.appendChild(li);
-            });
-        }
+                    let mapHTML = trip.mapLink ? `<a href="${trip.mapLink}" target="_blank" class="map-btn">📍 นำทางไปที่นี่</a>` : '';
+                    let imageHTML = trip.imageLink ? `<img src="${trip.imageLink}" alt="รูปสถานที่" class="place-image" onerror="this.style.display='none';">` : '';
+
+                    li.innerHTML = `
+                        <div class="time" style="color: ${trip.color}">${trip.time}</div>
+                        <div class="details">
+                            <div class="place">📍 ${trip.place}</div>
+                            <div class="activity">${trip.activity}</div>
+                            ${mapHTML}
+                            ${imageHTML}
+                        </div>
+                        <button class="delete-btn" onclick="removeTrip('${trip.id}')">ลบ</button>
+                    `;
+                    list.appendChild(li);
+                });
+            }
+        });
+
         function removeTrip(id) {
-            trips = trips.filter(trip => trip.id !== id);
-            renderTrips();
-            saveTrips(); 
-        }
-        function saveTrips() {
-            localStorage.setItem('myTripDataJSON', JSON.stringify(trips));
-        }
-        function loadTrips() {
-            const savedData = localStorage.getItem('myTripDataJSON');
-            if(savedData) {
-                trips = JSON.parse(savedData);
-            } else {
-                trips = [
-                    {
-                        id: Date.now(),
-                        time: '09:00',
-                        place: 'จุดนัดพบ',
-                        activity: 'รวมแก๊ง เตรียมตัวออกเดินทาง!',
-                        mapLink: '',
-                        imageLink: '',
-                        color: '#1e90ff'
-                    }
-                ];
-            }
-            renderTrips();
-        }
-
-        function clearAllTrips() {
-            if(confirm("แน่ใจนะว่าจะล้างตารางทริปทั้งหมด?")) {
-                trips = [];
-                renderTrips();
-                saveTrips();
-            }
+            db.child(id).remove(); 
         }
     </script>
 
